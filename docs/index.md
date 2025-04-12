@@ -147,5 +147,4 @@ Docunyan will generate a full `swagger.json` file with:
 Want to contribute? We’d love your help!  
 Feel free to open issues or submit PRs at:  
 👉 [github.com/fanchann/docunyan](https://github.com/fanchann/docunyan)
-
 ---
