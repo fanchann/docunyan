@@ -1,3 +1,8 @@
+---
+layout: default
+title: Docunyan Documentation
+---
+
 ## 🐱 Docunyan – Swagger Generator from Go Structs + YAML
 **Docunyan** is a documentation generator for Swagger/OpenAPI, designed specifically for Go applications. It simplifies the process of creating API documentation by automatically generating Swagger/OpenAPI specifications from your Go structs and configuration files.
 
