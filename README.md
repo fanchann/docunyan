@@ -7,9 +7,9 @@
 ## ⚙️ Installation
 
 ```bash
-go install github.com/yourusername/docunyan@latest
+go install github.com/fanchann/docunyan@latest
 # or clone manually:
-git clone https://github.com/yourusername/docunyan.git && cd docunyan && go install
+git clone https://github.com/fanchann/docunyan.git && cd docunyan && go install
 ```
 
 ---
