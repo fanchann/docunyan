@@ -44,7 +44,7 @@ type DocunyanYAML struct {
 	Servers []struct {
 		URL         string `yaml:"url"`
 		Description string `yaml:"description,omitempty"`
-	} `yaml:"servers,omitempty"`
+	} `yaml:"servers"`
 	Paths         map[string]map[string]EndpointDetail `yaml:"paths"`
 	Authorization *Authorization                       `yaml:"authorization,omitempty"`
 }
