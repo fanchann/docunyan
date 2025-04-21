@@ -12,10 +12,10 @@ title: Docunyan Documentation
 
 ```bash
 # Install via go install
-go install github.com/yourusername/docunyan@latest
+go install github.com/fanchann/docunyan@latest
 
 # Or clone the repository manually
-git clone https://github.com/yourusername/docunyan.git
+git clone https://github.com/fanchann/docunyan.git
 cd docunyan
 go install
 ```
