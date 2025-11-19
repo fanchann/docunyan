@@ -2,7 +2,7 @@ package builder
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 	"strings"
 
 	"github.com/fanchann/docunyan/internals/models"
@@ -103,8 +103,7 @@ func BuildOpenAPISpec(doc models.DocunyanYAML, schemas map[string]interface{}) (
 
 	output, err := json.MarshalIndent(swagger, "", "  ")
 	if err != nil {
-		log.Printf("failed to marshal json: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal json: %w", err)
 	}
 
 	return output, nil

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/fanchann/docunyan/internals/constants"
 	"github.com/fanchann/docunyan/internals/parser"
 )
 
@@ -18,7 +19,7 @@ func GenerateSwagger(configPath, goFilePath, outputPath string) error {
 		outputPath = fmt.Sprintf("docunyan_gen_%s.json", time.Now().Format("20060102_150405"))
 	}
 
-	if err := os.WriteFile(outputPath, outputTempl, 0644); err != nil {
+	if err := os.WriteFile(outputPath, outputTempl, constants.DefaultFilePermission); err != nil {
 		return fmt.Errorf("failed to write output file: %w", err)
 	}
 

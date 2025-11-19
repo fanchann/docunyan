@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -41,6 +42,10 @@ func NewConfigWatcher(filePath string) (*ConfigWatcher, error) {
 }
 
 func (c *ConfigWatcher) Start() error {
+	return c.StartWithContext(context.Background())
+}
+
+func (c *ConfigWatcher) StartWithContext(ctx context.Context) error {
 	absPath, err := filepath.Abs(c.filePath)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path: %v", err)
@@ -57,13 +62,16 @@ func (c *ConfigWatcher) Start() error {
 
 	fmt.Println()
 	os.Stdout.WriteString("\033[H\033[2J")
-	color.HiCyan("📝 Docunyan YAML Config Watcher")
+	color.HiCyan("Docunyan YAML Config Watcher")
 	color.HiCyan("==============================")
 	color.Cyan("Watching: %s", c.filePath)
 	fmt.Println()
 
 	for {
 		select {
+		case <-ctx.Done():
+			color.Yellow("\nStopping watcher...")
+			return nil
 		case event, ok := <-c.watcher.Events:
 			if !ok {
 				return fmt.Errorf("watcher event channel closed")
@@ -72,7 +80,7 @@ func (c *ConfigWatcher) Start() error {
 			if filepath.Clean(event.Name) == filepath.Clean(c.filePath) {
 				if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 					os.Stdout.WriteString("\033[H\033[2J")
-					color.HiCyan("📝 Docunyan YAML Config Watcher")
+					color.HiCyan("Docunyan YAML Config Watcher")
 					color.HiCyan("==============================")
 					color.Cyan("Watching: %s", c.filePath)
 					color.HiYellow("File changed at: %s", time.Now().Format("15:04:05"))

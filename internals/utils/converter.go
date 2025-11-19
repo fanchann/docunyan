@@ -45,7 +45,7 @@ func GenerateQueryParameters(queryParamsDef interface{}) []map[string]interface{
 	return params
 }
 
-//  creates a parameter object for OpenAPI spec
+// creates a parameter object for OpenAPI spec
 func CreateParameterObject(name string, details interface{}, paramIn string) map[string]interface{} {
 	paramObj := map[string]interface{}{
 		"name":     name,
@@ -120,40 +120,8 @@ func CreateParameterObject(name string, details interface{}, paramIn string) map
 	return paramObj
 }
 
-//  converts map[interface{}]interface{} to map[string]interface{}
-func ConvertToStringMap(m map[interface{}]interface{}) map[string]interface{} {
-	result := make(map[string]interface{})
-	for k, v := range m {
-		switch key := k.(type) {
-		case string:
-			switch val := v.(type) {
-			case map[interface{}]interface{}:
-				result[key] = ConvertToStringMap(val)
-			case []interface{}:
-				result[key] = ConvertToStringSlice(val)
-			default:
-				result[key] = v
-			}
-		}
-	}
-	return result
-}
-
-//  converts []interface{} to proper string or map slice
-func ConvertToStringSlice(a []interface{}) []interface{} {
-	result := make([]interface{}, len(a))
-	for i, v := range a {
-		switch val := v.(type) {
-		case map[interface{}]interface{}:
-			result[i] = ConvertToStringMap(val)
-		case []interface{}:
-			result[i] = ConvertToStringSlice(val)
-		default:
-			result[i] = v
-		}
-	}
-	return result
-}
+// Note: ConvertToStringMap and ConvertToStringSlice have been moved to generic_converter.go
+// for better code organization and to reduce duplication
 
 func ExprToTypeString(expr ast.Expr) string {
 	switch t := expr.(type) {

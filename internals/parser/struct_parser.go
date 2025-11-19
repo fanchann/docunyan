@@ -1,10 +1,10 @@
 package parser
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"log"
 	"reflect"
 	"strings"
 
@@ -29,8 +29,7 @@ func (s *SchemaBuilder) ParseGoStructs(contractFileName string) error {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, contractFileName, nil, parser.ParseComments)
 	if err != nil {
-		log.Printf("failed to parse %s: %v", contractFileName, err)
-		return err
+		return fmt.Errorf("failed to parse %s: %w", contractFileName, err)
 	}
 
 	for _, decl := range node.Decls {

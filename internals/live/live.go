@@ -1,23 +1,28 @@
 package live
 
 import (
-	_ "embed"
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/gorilla/websocket"
 
+	"github.com/fanchann/docunyan/internals/constants"
 	"github.com/fanchann/docunyan/internals/utils"
+
+	_ "embed"
 )
 
 func openBrowser(url string) error {
@@ -42,37 +47,60 @@ func openBrowser(url string) error {
 //go:embed index.html
 var index string
 
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  constants.WebSocketReadBufferSize,
+	WriteBufferSize: constants.WebSocketWriteBufferSize,
+}
+
 func SwaggerLive(fileName string) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		log.Println("Shutting down gracefully...")
+		cancel()
+	}()
+
+	if err := swaggerLiveWithContext(ctx, fileName); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func swaggerLiveWithContext(ctx context.Context, fileName string) error {
 	msg := make(chan []byte)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 	defer watcher.Close()
 
 	fi, err := os.Stat(fileName)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return fmt.Errorf("failed to stat file: %w", err)
 	}
 	old := fi.ModTime()
 
 	err = watcher.Add(filepath.Dir(fileName))
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to add watcher: %w", err)
 	}
 
 	go func() {
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case event, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
 				if filepath.Base(event.Name) == filepath.Base(fileName) {
-					time.Sleep(100 * time.Millisecond) // debounce
+					time.Sleep(constants.FileWatcherDebounce)
 					fi, err := os.Stat(fileName)
 					if err != nil {
 						log.Println(err)
@@ -98,8 +126,6 @@ func SwaggerLive(fileName string) {
 			}
 		}
 	}()
-
-	var upgrader = websocket.Upgrader{}
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
@@ -132,6 +158,9 @@ func SwaggerLive(fileName string) {
 
 		for {
 			select {
+			case <-ctx.Done():
+				log.Println("context cancelled, closing websocket")
+				return
 			case m := <-msg:
 				if err := c.WriteJSON(map[string]string{"message": string(m)}); err != nil {
 					log.Println(err)
@@ -146,7 +175,7 @@ func SwaggerLive(fileName string) {
 
 	port, err := utils.GetAvailableRandomPort()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to get available port: %w", err)
 	}
 
 	portStr := strconv.Itoa(port)
@@ -154,11 +183,36 @@ func SwaggerLive(fileName string) {
 		body := fmt.Sprintf(index, portStr)
 		_, _ = w.Write([]byte(body))
 	})
-	log.Println("start server:", port)
-	log.Println("watching", fileName)
 
-	if err := openBrowser("http://localhost:" + portStr); err != nil {
-		log.Println("cannot open browser", err)
+	server := &http.Server{
+		Addr: ":" + portStr,
 	}
-	log.Fatal(http.ListenAndServe(":"+portStr, nil))
+
+	// Start server in goroutine
+	go func() {
+		log.Println("start server:", port)
+		log.Println("watching", fileName)
+
+		if err := openBrowser("http://localhost:" + portStr); err != nil {
+			log.Println("cannot open browser", err)
+		}
+
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("server error: %v", err)
+		}
+	}()
+
+	// Wait for context cancellation
+	<-ctx.Done()
+
+	// Graceful shutdown
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("server shutdown error: %w", err)
+	}
+
+	log.Println("Server stopped gracefully")
+	return nil
 }
