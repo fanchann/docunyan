@@ -223,25 +223,47 @@ func buildPaths(docPaths map[string]map[string]models.EndpointDetail, securitySc
 				case map[interface{}]interface{}:
 					// Complex parameter object
 					paramMap := utils.ConvertToStringMap(p)
-					if name, ok := paramMap["name"].(string); ok {
-						paramObj := map[string]interface{}{
-							"name":     name,
-							"in":       paramMap["in"].(string),
-							"required": paramMap["required"].(bool),
+					name, ok := paramMap["name"].(string)
+					if !ok {
+						continue
+					}
+
+					paramObj := map[string]interface{}{
+						"name": name,
+					}
+
+					// Safe extraction of 'in' parameter
+					if in, exists := paramMap["in"]; exists {
+						if inStr, ok := in.(string); ok {
+							paramObj["in"] = inStr
+						} else {
+							paramObj["in"] = "query" // default value
 						}
-						if schema, ok := paramMap["schema"].(string); ok {
-							if _, exists := models.StructSchemas[schema]; exists {
-								paramObj["schema"] = map[string]interface{}{
-									"$ref": "#/components/schemas/" + schema,
-								}
-							} else {
-								paramObj["schema"] = map[string]interface{}{
-									"type": utils.GoTypeToSwaggerType(schema),
-								}
+					} else {
+						paramObj["in"] = "query" // default value
+					}
+
+					// Safe extraction of 'required' parameter
+					if req, exists := paramMap["required"]; exists {
+						if reqBool, ok := req.(bool); ok {
+							paramObj["required"] = reqBool
+						} else {
+							paramObj["required"] = true // default value
+						}
+					} else {
+						paramObj["required"] = true // default value
+					}
+
+					// Safe extraction of 'schema' parameter
+					if schema, exists := paramMap["schema"]; exists {
+						if schemaStr, ok := schema.(string); ok {
+							paramObj["schema"] = map[string]interface{}{
+								"type": utils.GoTypeToSwaggerType(schemaStr),
 							}
 						}
-						params = append(params, paramObj)
 					}
+
+					params = append(params, paramObj)
 				}
 			}
 

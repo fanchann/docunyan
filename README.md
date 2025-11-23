@@ -16,17 +16,95 @@ git clone https://github.com/fanchann/docunyan.git && cd docunyan && go install
 
 ## 🚀 Quick Start
 
+### Option 1: Create New Project Folder
+
 ```bash
-docunyan --config <docunyan.yml> --go-file <dto.go> [--output <swagger.yaml>] [--live <swagger.yaml>]
+docunyan init --name my-api
+cd my-api
+docunyan watch
 ```
 
-### Required Flags
-- `--config`: YAML config file path
-- `--go-file`: Go DTO file path
+### Option 2: Initialize in Current Directory
 
-### Optional Flags
-- `--output`: Save generated Swagger file
-- `--live`: Start local Swagger UI preview
+```bash
+mkdir my-api && cd my-api
+docunyan init
+docunyan watch
+```
+
+### What Gets Created:
+
+```
+my-api/
+├── docunyan.yml          # API configuration
+├── dto/
+│   └── example.go        # Example DTOs
+└── generated/
+    └── generated.json    # Generated Swagger (after watch)
+```
+
+### Live Reload Features:
+
+When you run `docunyan watch`:
+- ✅ Auto-detect project structure
+- ✅ Generate initial Swagger JSON
+- ✅ Watch for file changes (docunyan.yml, dto/*.go)
+- ✅ Auto-regenerate on changes
+- ✅ Open Swagger UI in browser
+
+### Add Your DTOs
+
+Create any `.go` files in `dto/` directory:
+
+```go
+// dto/product.go
+package dto
+
+type Product struct {
+    ID    int64  `json:"id"`
+    Name  string `json:"name" validate:"required"`
+    Price float64 `json:"price"`
+}
+```
+
+**All `.go` files in `dto/` are automatically scanned!**
+
+---
+
+## 📋 Commands
+
+### Main Commands
+
+```bash
+docunyan init                    # Initialize in current directory
+docunyan init --name <folder>    # Create new project folder
+docunyan watch                   # Start live reload (auto-detect)
+docunyan --folder <path> watch   # Watch specific folder
+docunyan validate [config.yml]   # Validate YAML config only
+```
+
+### Examples
+
+```bash
+# Create new project
+docunyan init --name my-api
+cd my-api && docunyan watch
+
+# Initialize in current directory
+mkdir my-api && cd my-api
+docunyan init
+docunyan watch
+
+# Watch different folder
+docunyan --folder ./api-v2 watch
+```
+
+### Legacy Commands (Still Supported)
+
+```bash
+docunyan --config <yml> --go-file <go|dir> [--output <json>]
+docunyan --live <swagger.json>
+```
 
 ---
 
@@ -78,11 +156,16 @@ paths:
 
 ## 📌 Features
 
+- 🚀 **Quick Init**: Bootstrap project with `docunyan init`
+- 🔄 **Live Reload**: Auto-regenerate on file changes with `docunyan watch`
+- 📁 **Directory Scanning**: Automatically scans all `.go` files in `dto/` folder
 - 🔄 **Struct to Schema**: Convert Go structs into Swagger definitions
-- 🔐 **Authorization**: Support for API keys
-- 🔗 **Path & Query Parameters**
-- 📦 **Request Bodies** handling
-- 📊 **Live Preview** via Swagger UI
+- 🔐 **Authorization**: Support for API keys & HTTP schemes
+- 🔗 **Path & Query Parameters**: Full parameter support
+- 📦 **Request Bodies**: Automatic schema generation
+- 📊 **Live Preview**: Built-in Swagger UI with hot reload
+- ✅ **Real-time Validation**: YAML config validation with error highlighting
+- 🎯 **Auto-detect**: Smart project structure detection
 
 ---
 
